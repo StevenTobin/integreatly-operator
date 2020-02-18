@@ -30,14 +30,7 @@ RH_REGISTRY_OSBS=registry-proxy.engineering.redhat.com/rh-osbs
 DELOREAN_REGISTRY=quay.io/integreatly/delorean
 
 collect_csv_images() {
-    csv_images=(`grep -o $RH_REGISTRY_STAGE.* $1`)
-}
-
-image_exists() {
-    echo "Checking if image exists $1"
-    #ToDo Need a way to determine if an image exists in any registry
-    #skopeo inspect docker://$1 > /dev/null
-    return 1
+    csv_images=(`grep -o $RH_REGISTRY_STAGE.* $1 || true`)
 }
 
 process_csv_images() {
@@ -46,30 +39,26 @@ process_csv_images() {
 
     for image in "${csv_images[@]}"
     do
-        if ! image_exists $image; then
-            echo "Processing image $image"
+        echo "Processing image $image"
 
-            image_path="$(echo $image | grep / | cut -d/ -f2-)"
-            osbs_image_path="$(echo $image_path | sed 's/\//-/')"
-            delorean_image_path="$(echo $osbs_image_path | sed 's/:/_/')"
+        image_path="$(echo $image | grep / | cut -d/ -f2-)"
+        osbs_image_path="$(echo $image_path | sed 's/\//-/')"
+        delorean_image_path="$(echo $osbs_image_path | sed 's/:/_/')"
 
-            osbs_image="${RH_REGISTRY_OSBS}/${osbs_image_path}"
-            delorean_image="${DELOREAN_REGISTRY}/${delorean_image_path}"
+        osbs_image="${RH_REGISTRY_OSBS}/${osbs_image_path}"
+        delorean_image="${DELOREAN_REGISTRY}/${delorean_image_path}"
 
-            echo "CSV Image: ${image}"
-            echo "OSBS Image: ${osbs_image}"
-            echo "Delorean Image: ${delorean_image}"
+        echo "CSV Image: ${image}"
+        echo "OSBS Image: ${osbs_image}"
+        echo "Delorean Image: ${delorean_image}"
 
-            #Update image reference in csv to use delorean registry
-            sed -i.bak "s|${image}|${delorean_image}|g" $1
-            rm $1.bak
+        #Update image reference in csv to use delorean registry
+        sed -i.bak "s|${image}|${delorean_image}|g" $1
+        rm $1.bak
 
-            #Add the image mapping if it doesn't already exist
-            osbs_delorean_map="${osbs_image} ${delorean_image}"
-            grep -qxF "$osbs_delorean_map" $image_mirror_mapping || echo $osbs_delorean_map >> $image_mirror_mapping
-        else
-            echo "$image exists, skipping!"
-        fi
+        #Add the image mapping if it doesn't already exist
+        osbs_delorean_map="${osbs_image} ${delorean_image}"
+        grep -qxF "$osbs_delorean_map" $image_mirror_mapping || echo $osbs_delorean_map >> $image_mirror_mapping
     done
 }
 
@@ -77,11 +66,17 @@ CSV=$1
 PRODUCT=$2
 
 process_csv() {
-   echo "~~~~~~"
-   echo "Process CSV '$CSV' for Product $PRODUCT"
-   echo "~~~~~~"
-   collect_csv_images $CSV
-   process_csv_images $CSV $PRODUCT
+    echo "~~~~~~"
+    echo "Process CSV '$CSV' for Product $PRODUCT"
+    echo "~~~~~~"
+
+    if [ ! -f "$CSV" ]; then
+        echo "$CSV does not exist"
+        exit 1
+    fi
+
+    collect_csv_images $CSV
+    process_csv_images $CSV $PRODUCT
 }
 
 process_csv

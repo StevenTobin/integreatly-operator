@@ -96,7 +96,6 @@ func LinkSecretToServiceAccounts(ctx context.Context, client k8sclient.Client, n
 				pullSecretFound = true
 				break
 			}
-
 		}
 
 		if !pullSecretFound {

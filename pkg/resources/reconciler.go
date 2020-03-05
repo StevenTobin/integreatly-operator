@@ -130,6 +130,18 @@ func (r *Reconciler) ReconcileNamespace(ctx context.Context, namespace string, i
 		return integreatlyv1alpha1.PhaseCompleted, nil
 	}
 
+	if inst.Spec.PullSecret.Name != "" {
+		_, err := r.ReconcilePullSecret(ctx, namespace, inst.Spec.PullSecret.Name, inst, client)
+		if err != nil {
+			return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("Failed to reconcile %s pull secret", inst.Spec.PullSecret.Name)
+		}
+
+		err = LinkSecretToServiceAccounts(ctx, client, namespace, inst.Spec.PullSecret.Name)
+		if err != nil {
+			return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("Failed to link %s pull secret with serviceAccounts", inst.Spec.PullSecret.Name)
+		}
+	}
+
 	PrepareObject(ns, inst)
 	if err := client.Update(ctx, ns); err != nil {
 		return integreatlyv1alpha1.PhaseFailed, fmt.Errorf("failed to update the ns definition: %w", err)

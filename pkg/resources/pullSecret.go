@@ -85,3 +85,43 @@ func ReconcileSecretToRHMIOperatorNamespace(ctx context.Context, client k8sclien
 
 	return integreatlyv1alpha1.PhaseCompleted, nil
 }
+
+func LinkSecretToServiceAccounts (ctx context.Context, client k8sclient.Client, namespace string, secretName string) error {
+	serviceAccounts := &corev1.ServiceAccountList{}
+	listOpts := []k8sclient.ListOption{
+		k8sclient.InNamespace(namespace),
+	}
+	err := client.List(ctx, serviceAccounts, listOpts...)
+	if err != nil {
+		return err
+	}
+
+	for _, sa := range serviceAccounts.Items {
+		currentSa := &corev1.ServiceAccount{}
+		err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: sa.Name}, currentSa)
+		if err != nil {
+			return err
+		}
+
+		pullSecretFound := false
+		for _, ips := range currentSa.ImagePullSecrets{
+			if ips.Name == secretName {
+				pullSecretFound = true
+			}
+
+		}
+
+		if !pullSecretFound {
+			newPullSecret := corev1.LocalObjectReference{Name: secretName}
+			imagePullSecret := append(currentSa.ImagePullSecrets, newPullSecret)
+			_, err = controllerutil.CreateOrUpdate(ctx, client, currentSa, func() error {
+				currentSa.ImagePullSecrets = imagePullSecret
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

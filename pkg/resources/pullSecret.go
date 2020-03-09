@@ -86,7 +86,7 @@ func ReconcileSecretToRHMIOperatorNamespace(ctx context.Context, client k8sclien
 	return integreatlyv1alpha1.PhaseCompleted, nil
 }
 
-func LinkSecretToServiceAccounts (ctx context.Context, client k8sclient.Client, namespace string, secretName string) error {
+func LinkSecretToServiceAccounts(ctx context.Context, client k8sclient.Client, namespace string, secretName string) error {
 	serviceAccounts := &corev1.ServiceAccountList{}
 	listOpts := []k8sclient.ListOption{
 		k8sclient.InNamespace(namespace),
@@ -104,7 +104,7 @@ func LinkSecretToServiceAccounts (ctx context.Context, client k8sclient.Client, 
 		}
 
 		pullSecretFound := false
-		for _, ips := range currentSa.ImagePullSecrets{
+		for _, ips := range currentSa.ImagePullSecrets {
 			if ips.Name == secretName {
 				pullSecretFound = true
 			}

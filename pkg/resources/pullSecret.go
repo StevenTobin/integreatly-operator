@@ -107,15 +107,15 @@ func LinkSecretToServiceAccounts(ctx context.Context, client k8sclient.Client, n
 		for _, ips := range currentSa.ImagePullSecrets {
 			if ips.Name == secretName {
 				pullSecretFound = true
+				break
 			}
 
 		}
 
 		if !pullSecretFound {
 			newPullSecret := corev1.LocalObjectReference{Name: secretName}
-			imagePullSecret := append(currentSa.ImagePullSecrets, newPullSecret)
 			_, err = controllerutil.CreateOrUpdate(ctx, client, currentSa, func() error {
-				currentSa.ImagePullSecrets = imagePullSecret
+				currentSa.ImagePullSecrets = append(currentSa.ImagePullSecrets, newPullSecret)
 				return nil
 			})
 			if err != nil {

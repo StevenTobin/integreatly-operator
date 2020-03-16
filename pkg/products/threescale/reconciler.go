@@ -62,6 +62,8 @@ const (
 
 	systemSeedSecretName          = "system-seed"
 	systemMasterApiCastSecretName = "system-master-apicast"
+
+	pullSecretName = "3scale-pull-secret"
 )
 
 func NewReconciler(configManager config.ConfigReadWriter, installation *integreatlyv1alpha1.RHMI, appsv1Client appsv1Client.AppsV1Interface, oauthv1Client oauthClient.OauthV1Interface, tsClient ThreeScaleInterface, mpm marketplace.MarketplaceInterface, recorder record.EventRecorder) (*Reconciler, error) {
@@ -166,7 +168,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, installation *integreatlyv1a
 		return integreatlyv1alpha1.PhaseFailed, err
 	}
 
-	phase, err = r.ReconcilePullSecret(ctx, r.Config.GetNamespace(), "3scale-pull-secret", installation, serverClient)
+	phase, err = r.ReconcilePullSecret(ctx, r.Config.GetNamespace(), pullSecretName, installation, serverClient)
 	if err != nil || phase != integreatlyv1alpha1.PhaseCompleted {
 		events.HandleError(r.recorder, installation, phase, "Failed to reconcile pull secret", err)
 		return phase, err

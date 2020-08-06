@@ -69,7 +69,7 @@ generate_bundles() {
     opm alpha bundle build --directory ./manifests --tag $REG/$ORG/integreatly-bundle:${VERSION} \
         --package integreatly --channels $CHANNEL --default $CHANNEL
 
-    docker push $REG/$ORG/integreatly-bundle:$VERSION
+    ${BUILD_TOOL} push $REG/$ORG/integreatly-bundle:$VERSION
     operator-sdk bundle validate $REG/$ORG/integreatly-bundle:$VERSION
 
     cd ../../
@@ -96,7 +96,7 @@ generate_index() {
 
   printf 'Pushing index image:'$INDEX_IMAGE'\n'
 
-  docker push $INDEX_IMAGE
+  ${BUILD_TOOL} push $INDEX_IMAGE
 }
 
 create_catalog_source() {
